@@ -250,6 +250,15 @@ describe('parser', () => {
     expect(ast.children[0].children[0].text).toBe('{{msg}}')
   })
 
+  it('v-pre directive should leave template in DOM', () => {
+    const ast = parse('<div v-pre id="message1"><template id="template1"><p>{{msg}}</p></template></div>', baseOptions)
+    expect(ast.pre).toBe(true)
+    expect(ast.attrs[0].name).toBe('id')
+    expect(ast.attrs[0].value).toBe('"message1"')
+    expect(ast.children[0].attrs[0].name).toBe('id')
+    expect(ast.children[0].attrs[0].value).toBe('"template1"')
+  })
+
   it('v-for directive basic syntax', () => {
     const ast = parse('<ul><li v-for="item in items"></li></ul>', baseOptions)
     const liAst = ast.children[0]
@@ -510,6 +519,11 @@ describe('parser', () => {
     expect(ast.props[0].value).toBe('msg')
   })
 
+  it('empty v-bind expression', () => {
+    parse('<div :empty-msg=""></div>', baseOptions)
+    expect('The value for a v-bind expression cannot be empty. Found in "v-bind:empty-msg"').toHaveBeenWarned()
+  })
+
   // #6887
   it('special case static attribute that must be props', () => {
     const ast = parse('<video muted></video>', baseOptions)
@@ -716,5 +730,11 @@ describe('parser', () => {
     expect(ast.children[1].type).toBe(3) // parse comment with ASTText
     expect(ast.children[1].isComment).toBe(true) // parse comment with ASTText
     expect(ast.children[1].text).toBe('comment here')
+  })
+
+  // #8103
+  it('should allow CRLFs in string interpolations', () => {
+    const ast = parse(`<p>{{\r\nmsg\r\n}}</p>`, baseOptions)
+    expect(ast.children[0].expression).toBe('_s(msg)')
   })
 })

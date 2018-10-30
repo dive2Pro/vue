@@ -176,7 +176,8 @@ Vue.component('component', {
         fontSize: '14px'
       },
       key: 'myKey',
-      ref: 'myRef'
+      ref: 'myRef',
+      refInFor: true
     }, [
       createElement(),
       createElement("div", "message"),
@@ -354,6 +355,16 @@ Vue.component('functional-component-check-optional', {
   functional: true
 })
 
+Vue.component('functional-component-multi-root', {
+  functional: true,
+  render(h) {
+    return [
+      h("tr", [h("td", "foo"), h("td", "bar")]),
+      h("tr", [h("td", "lorem"), h("td", "ipsum")])
+    ]
+  }
+})
+
 Vue.component("async-component", ((resolve, reject) => {
   setTimeout(() => {
     resolve(Vue.component("component"));
@@ -365,5 +376,25 @@ Vue.component("async-component", ((resolve, reject) => {
     });
   })
 }));
+
+Vue.component('functional-component-v-model', {
+  props: ['foo'],
+  functional: true,
+  model: {
+    prop: 'foo',
+    event: 'change'
+  },
+  render(createElement, context) {
+    return createElement("input", {
+      on: {
+        input: new Function()
+      },
+      domProps: {
+        value: context.props.foo
+      }
+    });
+  }
+});
+
 
 Vue.component('async-es-module-component', () => import('./es-module'))

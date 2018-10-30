@@ -86,7 +86,7 @@ function initProps (vm: Component, propsOptions: Object) {
         )
       }
       defineReactive(props, key, value, () => {
-        if (vm.$parent && !isUpdatingChildComponent) {
+        if (!isRoot && !isUpdatingChildComponent) {
           warn(
             `Avoid mutating a prop directly since the value will be ` +
             `overwritten whenever the parent component re-renders. ` +
@@ -321,7 +321,7 @@ export function stateMixin (Vue: Class<Component>) {
   const propsDef = {}
   propsDef.get = function () { return this._props }
   if (process.env.NODE_ENV !== 'production') {
-    dataDef.set = function (newData: Object) {
+    dataDef.set = function () {
       warn(
         'Avoid replacing instance root $data. ' +
         'Use nested data properties instead.',
