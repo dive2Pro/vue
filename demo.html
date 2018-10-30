@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <script src="./dist/vue.js"></script>
+</head>
+
+<body>
+    <dic id="app"></dic>
+    <script>
+        Vue.component('c-slot', {
+            data() {
+                return {
+                    res: {
+                        he: 'llo'
+                    }
+                }
+            },
+            template: `
+        <div>
+            <slot></slot>
+            <slot name="footer"></slot>
+            <slot :props="res"></slot>
+            <slot></slot>
+            <slot name="ff">
+                <h2>hello</h2>
+                </slot>
+        </div>
+        
+        `
+        })
+
+        new Vue({
+            template: `
+                <div>
+                    <c-slot>
+
+                                <h2 slot="footer"> I am named slot </h2> <h1> I am default slot </h1> <h1 slot-scope="res"  > {{res}} I am scoped slot </h1> <h1> Other default slot </h1> </c-slot> </div> ` }) </script>
+    <script>
+        new Vue({
+            // el: "#app",
+            data() {
+                return {
+                    value: ''
+                }
+            },
+            template: `
+                <div>
+                    <div> value : {{value}}</div>
+                     <input v-model="value" />
+                </div>
+            `
+        })
+    </script>
+    <script>
+
+        Vue.component('ip', {
+            beforeMount() {
+                // console.log('before mount')
+                // console.log(fn())
+
+                const channel = new MessageChannel()
+                const port = channel.port2
+                channel.port1.onmessage = (arg) => {
+                    this.$nextTick(() => {
+                        console.log('Marco - ', arg)
+                    })
+                }
+
+                const fn = (arg) => {
+                    port.postMessage(arg)
+                }
+                fn(1) // 在 mounted 之后
+                this.$nextTick(() => {
+                    // A micro
+                    console.log(' A')
+                    fn(2) // outter nextTick 之后
+                    this.$nextTick(() => {
+                        console.log('B')
+                    })
+                    this.msg = 'haha' // A micro, fire flushing
+                    fn(3) // update 之后
+                    this.$nextTick(() => {
+                        console.log('C') // B micro
+                    })
+
+                    this.$nextTick(() => {
+                        fn(4)
+                        this.msg = 'haha ---' // B micro
+                        console.log('D')
+                    })
+                })
+                this.$nextTick(() => {
+                    console.log('E') // A micro, reset msg 之后
+                })
+            },
+            mounted() {
+                // console.log('did mount')
+            },
+            beforeUpdate() {
+                console.log('before update')
+            },
+            updated() {
+                console.log('did update')
+            },
+            data() {
+                return {
+                    msg: '@@'
+                }
+            },
+            template: `
+                <div> Hello {{msg}}</div>
+            `
+        })
+        // beforemount
+        // mounted
+        // timer 1
+        // i am tick
+        // reset msg
+        // outter nextTick
+        // timer 2
+        // before update
+        // did update
+        // timer 3
+        // inner nextTick
+        // three nextTick
+        // beforeUpdate
+        // did update
+        new Vue({
+            el: '#app',
+            template: `
+            
+                <div>
+                        <ip />
+                </div>
+            `
+        })
+    </script>
+</body>
+
+</html>

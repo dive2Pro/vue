@@ -7090,7 +7090,6 @@ function add$1 (
       : capture
   );
 }
-
 function remove$2 (
   event,
   handler,
@@ -10972,7 +10971,7 @@ function getOuterHTML (el) {
 }
 
 Vue.compile = compileToFunctions;
-
+Vue. withMacroTask = withMacroTask
 return Vue;
 
 })));
