@@ -131,13 +131,41 @@
         // beforeUpdate
         // did update
         new Vue({
-            el: '#app',
+            // el: '#app',
             template: `
             
                 <div>
                         <ip />
                 </div>
             `
+        })
+    </script>
+    <script>
+        Vue.component('d-s', {
+
+            template: `<section>
+                    <h1>Some Thing</h1>
+                </section>`
+        })
+        new Vue({
+            el: "#app",
+            data: () => ({
+                ary: [1, 2, 3, 4],
+                a: 'color:red; cursor: pointer;'
+            }),
+            methods: {
+                h() {
+                    console.log('hhh')
+                }
+            },
+            template: `
+                <div >
+                    <div v-for="(a,i) in ary" v-if="ary" >{{a}}</div>
+                    <d-s :style.prop="a" :onclick.prop="h"/>
+                    </div>
+            
+            `
+
         })
     </script>
 </body>
