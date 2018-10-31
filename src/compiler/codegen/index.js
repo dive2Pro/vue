@@ -106,6 +106,11 @@ export function genElement(el: ASTElement, state: CodegenState): string {
     // module transforms
     for (let i = 0; i < state.transforms.length; i++) {
       // platform/web/compiler/modules/class | style 等 有设置 transforms
+      // 如果是 v-bind:style 或者 :style 这样没有 modifiers 的就会执行 transform
+      // 内置了的 style , class module 在 transform 设置的一些属性,
+      // 比如
+      // bindingStyle, 会在runtime 的 modules 中
+      // update 和 created 中使用到
       code = state.transforms[i](el, code)
     }
     return code
