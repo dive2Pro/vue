@@ -89,6 +89,7 @@ export function parse(template: string, options: CompilerOptions): ASTElement | 
     }
   }
 
+  // 调用 postTransform
   function closeElement(element) {
     // check pre state
     if (element.pre) {
@@ -196,6 +197,12 @@ export function parse(template: string, options: CompilerOptions): ASTElement | 
         checkRootConstraints(root)
       } else if (!stack.length) {
         // allow root elements with v-if, v-else-if and v-else
+        // 允许 在 root 节点上
+        // <template>
+        //  <div v-if></div>
+        //  <div v-else-if></div>
+        //  <div v-else></div>
+        // </template>
         if (root.if && (element.elseif || element.else)) {
           checkRootConstraints(element)
           addIfCondition(root, {
@@ -210,8 +217,11 @@ export function parse(template: string, options: CompilerOptions): ASTElement | 
           )
         }
       }
+
       if (currentParent && !element.forbidden) {
         if (element.elseif || element.else) {
+          // 当前有设置 v-elseif 或是 v-else
+          // 检查 prev child, 如果有设置 v-if,
           processIfConditions(element, currentParent)
         } else if (element.slotScope) {
           // scoped slot
@@ -219,10 +229,12 @@ export function parse(template: string, options: CompilerOptions): ASTElement | 
           const name = element.slotTarget || '"default"'
           ;(currentParent.scopedSlots || (currentParent.scopedSlots = {}))[name] = element
         } else {
+          // 将当前处理的 element 放入 父 element 中
           currentParent.children.push(element)
           element.parent = currentParent
         }
       }
+      // 不是以 /> 结尾的, 之后进行解析的就是 它的 child 了
       if (!unary) {
         currentParent = element
         stack.push(element)
@@ -230,11 +242,12 @@ export function parse(template: string, options: CompilerOptions): ASTElement | 
         closeElement(element)
       }
     },
-
+    // 只有在匹配到 </tag> 时会触发
     end() {
       // remove trailing whitespace
       const element = stack[stack.length - 1]
       const lastNode = element.children[element.children.length - 1]
+      // 将 whitespace child 移除
       if (lastNode && lastNode.type === 3 && lastNode.text === ' ' && !inPre) {
         element.children.pop()
       }
@@ -243,7 +256,7 @@ export function parse(template: string, options: CompilerOptions): ASTElement | 
       currentParent = stack[stack.length - 1]
       closeElement(element)
     },
-
+    // 解析 > 之中的 </
     chars(text: string) {
       if (!currentParent) {
         if (process.env.NODE_ENV !== 'production') {
@@ -265,6 +278,7 @@ export function parse(template: string, options: CompilerOptions): ASTElement | 
         return
       }
       const children = currentParent.children
+
       text =
         inPre || text.trim()
           ? isTextTag(currentParent)
@@ -274,9 +288,11 @@ export function parse(template: string, options: CompilerOptions): ASTElement | 
             preserveWhitespace && children.length
             ? ' '
             : ''
+
       if (text) {
         let res
         if (!inVPre && text !== ' ' && (res = parseText(text, delimiters))) {
+          // text-element
           children.push({
             type: 2,
             expression: res.expression,
@@ -288,6 +304,7 @@ export function parse(template: string, options: CompilerOptions): ASTElement | 
           !children.length ||
           children[children.length - 1].text !== ' '
         ) {
+          // 直接渲染字符
           children.push({
             type: 3,
             text
@@ -358,7 +375,7 @@ export function processElement(element: ASTElement, options: CompilerOptions) {
   for (let i = 0; i < transforms.length; i++) {
     element = transforms[i](element, options) || element
   }
-
+  // 处理到 attrs 中
   processAttrs(element)
 }
 
@@ -610,7 +627,9 @@ function processComponent(el) {
  *         { ...el,
  *        hasBindings: Boolean,
  *        modifiers: exp
- *
+ *        events: [],
+ *        attrs:[],
+ *        directives: []
  *    }
  */
 
@@ -653,7 +672,12 @@ function processAttrs(el) {
           if (modifiers.camel) {
             name = camelize(name)
           }
-          // 添加
+          // 添加额外的 update: name 到 el.events 中
+          // el ->
+          //    {...el,
+          //     events: [{ value: }]
+          //
+          // }
           if (modifiers.sync) {
             addHandler(el, `update:${camelize(name)}`, genAssignmentCode(value, `$event`))
           }
@@ -664,19 +688,28 @@ function processAttrs(el) {
         ) {
           addProp(el, name, value)
         } else {
+          // (el.attrs = []).push({name, value})
           addAttr(el, name, value)
         }
       } else if (onRE.test(name)) {
         // v-on
+        // 添加到 events 中
         name = name.replace(onRE, '')
         addHandler(el, name, value, modifiers, false, warn)
       } else {
+        // 以 v-qwe 这样的形式的, 即是 directive
         // normal directives
+        // name = qwe
         name = name.replace(dirRE, '')
         // parse arg
+        // 如果是  qwe:ee
+        // argMatch = [ee]
         const argMatch = name.match(argRE)
         const arg = argMatch && argMatch[1]
         if (arg) {
+          // 如果是 qwe:ee
+          // "qwe.ee"slice(0, -3) 会是:
+          // qwe
           name = name.slice(0, -(arg.length + 1))
         }
         addDirective(el, name, rawName, value, arg, modifiers)
@@ -685,6 +718,7 @@ function processAttrs(el) {
         }
       }
     } else {
+      //   字面量 props
       // literal attribute
       if (process.env.NODE_ENV !== 'production') {
         const res = parseText(value, delimiters)
