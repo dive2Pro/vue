@@ -697,7 +697,8 @@ function processAttrs(el) {
         name = name.replace(onRE, '')
         addHandler(el, name, value, modifiers, false, warn)
       } else {
-        // 以 v-qwe 这样的形式的, 即是 directive
+        // 以 v-qwe , v-bind.prop 等形式的
+        //  这样的形式的, 即是 directive
         // normal directives
         // name = qwe
         name = name.replace(dirRE, '')
@@ -731,6 +732,7 @@ function processAttrs(el) {
           )
         }
       }
+      // \"value\"
       addAttr(el, name, JSON.stringify(value))
       // #6887 firefox doesn't update muted state if set via attribute
       // even immediately after element creation
